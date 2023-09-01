@@ -10,6 +10,54 @@ def norms(Z):
     """Compute norms over all but the first dimension"""
     return Z.view(Z.shape[0], -1).norm(dim=1)[:, None, None, None]
 
+def _pgd_whitebox_norm(model, X, y, epsilon, num_steps, step_size, random, device, verbose=True,
+                     return_x=False, stats=None, norm="l_inf"):
+    def normalize_data(x):
+        if stats:
+            return torchvision.transforms.Normalize(*stats)(x)
+        else:
+            return x
+    out = model(normalize_data(X))
+    if norm == "l_inf":
+        err = (out.data.max(1)[1] != y.data).float().sum()
+    else:
+        err = (out.data.max(1)[1] != y.data).float().sum().detach().item()
+    X_pgd = Variable(X.data, requires_grad=True)
+    if random:
+        if norm == "l_inf":
+            random_noise = torch.FloatTensor(*X_pgd.shape).uniform_(-epsilon, epsilon).to(device)
+        else:
+            random_noise = torch.FloatTensor(*X_pgd.shape).uniform_(-8./255, 8./255).to(device)
+        X_pgd = Variable(X_pgd.data + random_noise, requires_grad=True)
+    for _ in range(num_steps):
+        opt = optim.SGD([X_pgd], lr=1e-3)
+        opt.zero_grad()
+        with torch.enable_grad():
+            loss = nn.CrossEntropyLoss()(model(normalize_data(X_pgd)), y)
+        loss.backward()
+        if norm == "l_inf":
+            eta = step_size * X_pgd.grad.data.sign()
+        else:
+            eta = step_size * X_pgd.grad.detach() / norms(X_pgd.grad.detach())
+
+        X_pgd = Variable(X_pgd.data + eta, requires_grad=True)
+        eta = torch.clamp(X_pgd.data - X.data, -epsilon, epsilon) if norm == "l_inf" \
+            else X_pgd.data - X.data
+        if norm == "l_2":
+            eta *= epsilon / norms(eta).clamp(min=epsilon)
+
+        X_pgd = Variable(X.data + eta, requires_grad=True)
+        X_pgd = Variable(torch.clamp(X_pgd, 0, 1.0), requires_grad=True)
+    if norm == "l_inf":
+        err_pgd = (model(normalize_data(X_pgd)).data.max(1)[1] != y.data).float().sum()
+    else:
+        err_pgd = (model(normalize_data(X_pgd)).data.max(1)[1] != y.data).float().sum().detach().item()
+
+    if verbose:
+        print('err pgd (white-box): ', err_pgd)
+    if return_x:
+        return X_pgd
+    return err, err_pgd
 
 # L2 attack
 def _pgd_whitebox_l2(model, X, y, epsilon, num_steps, step_size, random, device, verbose=True,
@@ -91,9 +139,11 @@ def eval_adv_test_whitebox(model, device, test_loader, epsilon, num_steps, step_
     model.eval()
     robust_err_total = 0
     natural_err_total = 0
-    attack_batch = _pgd_whitebox
+    
     if norm == 'l_2':
         attack_batch = _pgd_whitebox_l2
+    else:
+        attack_batch = _pgd_whitebox
     num_samples = len(test_loader.sampler)
     for data, target in test_loader:
         data, target = data.to(device), target.to(device)

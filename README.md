@@ -30,7 +30,10 @@ Next, to install the requirements in a new conda environment, run:
 ```bash
 conda env create -f environment.yml
 ```
-
+**or**
+```bash
+pip install numpy torch torchvision pyyaml wandb
+```
 ### Preparing Perceptually Aligned Gradients Data
 
 The Perceptually Aligned Gradients' realization for the Score-Based Gradients for the CIFAR-10 dataset is provided in the following table:

@@ -45,7 +45,7 @@ labels = torch.load('data/c10_sbg_label.pt')
 
 dataset = TensorDataset(data, labels)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=config["batch_size"], shuffle=True, pin_memory=True,
-                                         drop_last=True, num_workers=2)
+                                         drop_last=True, num_workers=0)
 aug = transforms.Compose([transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip()])
 
 # get data - test
@@ -53,7 +53,7 @@ transform = torchvision.transforms.Compose(
     [torchvision.transforms.ToTensor()])
 
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
+testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=0)
 
 # get model
 if config["arch"] == 'vit':
