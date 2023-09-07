@@ -79,6 +79,9 @@ if __name__ == "__main__":
     #                             weight_decay=config["weight_decay"])
 
     model.load_state_dict(torch.load("models/weights/rn18-c10-SBG.pt"))
+    # model.load_state_dict(torch.load("models/weights/rn18-c10-CM.pt"))
+    # model.load_state_dict(torch.load("models/weights/rn18-c10-NN.pt"))
+    # model.load_state_dict(torch.load("models/weights/rn18-c10-OI.pt"))
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # c_acc, r_acc = eval_adv_test_whitebox(model=model, device=device, test_loader=testloader, epsilon=0.5, num_steps=7,
@@ -107,6 +110,9 @@ if __name__ == "__main__":
 
     dataiter = iter(testloader)
     images, labels = next(dataiter)
+    images, labels = next(dataiter) # 2nd image
+    images, labels = next(dataiter) # 3rd image
+    images, labels = next(dataiter) # 4rd image
 
     # print images
     imshow(torchvision.utils.make_grid(images))
@@ -141,9 +147,9 @@ if __name__ == "__main__":
         
         return tensor_attributions
     
-    saliency = Saliency(model)
-    grads = saliency.attribute(input, target=labels[ind].item())
-    grads = np.transpose(grads.squeeze().cpu().detach().numpy(), (1, 2, 0))
+    # saliency = Saliency(model)
+    # grads = saliency.attribute(input, target=labels[ind].item())
+    # grads = np.transpose(grads.squeeze().cpu().detach().numpy(), (1, 2, 0))
 
 
     # ig = IntegratedGradients(model)
@@ -151,11 +157,11 @@ if __name__ == "__main__":
     # attr_ig = np.transpose(attr_ig.squeeze().cpu().detach().numpy(), (1, 2, 0))
     # print('Approximation delta: ', abs(delta))
 
-    # ig = IntegratedGradients(model)
-    # nt = NoiseTunnel(ig)
-    # attr_ig_nt = attribute_image_features(nt, input, baselines=input * 0, nt_type='smoothgrad_sq',
-    #                                     nt_samples=100, stdevs=0.2)
-    # attr_ig_nt = np.transpose(attr_ig_nt.squeeze(0).cpu().detach().numpy(), (1, 2, 0))
+    ig = IntegratedGradients(model)
+    nt = NoiseTunnel(ig)
+    attr_ig_nt = attribute_image_features(nt, input, baselines=input * 0, nt_type='smoothgrad_sq',
+                                        nt_samples=100, stdevs=0.2)
+    attr_ig_nt = np.transpose(attr_ig_nt.squeeze(0).cpu().detach().numpy(), (1, 2, 0))
 
     # dl = DeepLift(model)
     # attr_dl = attribute_image_features(dl, input, baselines=input * 0)
@@ -170,15 +176,15 @@ if __name__ == "__main__":
     _ = viz.visualize_image_attr(None, original_image, 
                         method="original_image", title="Original Image")
 
-    _ = viz.visualize_image_attr(grads, original_image, method="blended_heat_map", sign="absolute_value",
-                            show_colorbar=True, title="Overlayed Gradient Magnitudes")
+    # _ = viz.visualize_image_attr(grads, original_image, method="blended_heat_map", sign="absolute_value",
+    #                         show_colorbar=True, title="Overlayed Gradient Magnitudes")
 
     # _ = viz.visualize_image_attr(attr_ig, original_image, method="blended_heat_map",sign="all",
     #                         show_colorbar=True, title="Overlayed Integrated Gradients")
 
-    # _ = viz.visualize_image_attr(attr_ig_nt, original_image, method="blended_heat_map", sign="absolute_value", 
-    #                             outlier_perc=10, show_colorbar=True, 
-    #                             title="Overlayed Integrated Gradients \n with SmoothGrad Squared")
+    _ = viz.visualize_image_attr(attr_ig_nt, original_image, method="blended_heat_map", sign="absolute_value", 
+                                outlier_perc=10, show_colorbar=True, 
+                                title="Overlayed Integrated Gradients \n with SmoothGrad Squared")
 
     # _ = viz.visualize_image_attr(attr_dl, original_image, method="blended_heat_map",sign="all",show_colorbar=True, 
     #                         title="Overlayed DeepLift")
