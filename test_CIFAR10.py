@@ -147,15 +147,15 @@ if __name__ == "__main__":
         
         return tensor_attributions
     
-    # saliency = Saliency(model)
-    # grads = saliency.attribute(input, target=labels[ind].item())
-    # grads = np.transpose(grads.squeeze().cpu().detach().numpy(), (1, 2, 0))
+    saliency = Saliency(model)
+    grads = saliency.attribute(input, target=labels[ind].item())
+    grads = np.transpose(grads.squeeze().cpu().detach().numpy(), (1, 2, 0))
 
 
-    # ig = IntegratedGradients(model)
-    # attr_ig, delta = attribute_image_features(ig, input, baselines=input * 0, return_convergence_delta=True)
-    # attr_ig = np.transpose(attr_ig.squeeze().cpu().detach().numpy(), (1, 2, 0))
-    # print('Approximation delta: ', abs(delta))
+    ig = IntegratedGradients(model)
+    attr_ig, delta = attribute_image_features(ig, input, baselines=input * 0, return_convergence_delta=True)
+    attr_ig = np.transpose(attr_ig.squeeze().cpu().detach().numpy(), (1, 2, 0))
+    print('Approximation delta: ', abs(delta))
 
     ig = IntegratedGradients(model)
     nt = NoiseTunnel(ig)
@@ -163,9 +163,9 @@ if __name__ == "__main__":
                                         nt_samples=100, stdevs=0.2)
     attr_ig_nt = np.transpose(attr_ig_nt.squeeze(0).cpu().detach().numpy(), (1, 2, 0))
 
-    # dl = DeepLift(model)
-    # attr_dl = attribute_image_features(dl, input, baselines=input * 0)
-    # attr_dl = np.transpose(attr_dl.squeeze(0).cpu().detach().numpy(), (1, 2, 0))
+    #dl = DeepLift(model)
+    #attr_dl = attribute_image_features(dl, input, baselines=input * 0)
+    #attr_dl = np.transpose(attr_dl.squeeze(0).cpu().detach().numpy(), (1, 2, 0))
 
     print('Original Image')
     print('Predicted:', classes[predicted[ind]], 
@@ -175,16 +175,21 @@ if __name__ == "__main__":
 
     _ = viz.visualize_image_attr(None, original_image, 
                         method="original_image", title="Original Image")
+    plt.savefig("original.png")
 
-    # _ = viz.visualize_image_attr(grads, original_image, method="blended_heat_map", sign="absolute_value",
-    #                         show_colorbar=True, title="Overlayed Gradient Magnitudes")
+    _ = viz.visualize_image_attr(grads, original_image, method="blended_heat_map", sign="absolute_value",
+                             show_colorbar=True, title="Overlayed Gradient Magnitudes")
+    plt.savefig("Gradient_magnitude.png")
 
-    # _ = viz.visualize_image_attr(attr_ig, original_image, method="blended_heat_map",sign="all",
-    #                         show_colorbar=True, title="Overlayed Integrated Gradients")
+    _ = viz.visualize_image_attr(attr_ig, original_image, method="blended_heat_map",sign="all",
+                             show_colorbar=True, title="Overlayed Integrated Gradients")
+    plt.savefig("IG.png")
 
     _ = viz.visualize_image_attr(attr_ig_nt, original_image, method="blended_heat_map", sign="absolute_value", 
                                 outlier_perc=10, show_colorbar=True, 
                                 title="Overlayed Integrated Gradients \n with SmoothGrad Squared")
+    plt.savefig("IG_with_smoothgrad.png")
 
     # _ = viz.visualize_image_attr(attr_dl, original_image, method="blended_heat_map",sign="all",show_colorbar=True, 
     #                         title="Overlayed DeepLift")
+    # plt.savefig("DeepLift.png")
