@@ -62,7 +62,7 @@ if __name__ == "__main__":
     transform = torchvision.transforms.Compose(
         [torchvision.transforms.ToTensor()])
 
-    batch_size = 1
+    batch_size = 4
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=0)
 
@@ -110,9 +110,9 @@ if __name__ == "__main__":
 
     dataiter = iter(testloader)
     images, labels = next(dataiter)
-    images, labels = next(dataiter) # 2nd image
-    images, labels = next(dataiter) # 3rd image
-    images, labels = next(dataiter) # 4rd image
+    #images, labels = next(dataiter) # 2nd image
+    #images, labels = next(dataiter) # 3rd image
+    #images, labels = next(dataiter) # 4rd image
 
     # print images
     imshow(torchvision.utils.make_grid(images))
