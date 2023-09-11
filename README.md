@@ -34,6 +34,7 @@ conda env create -f environment.yml
 ```bash
 pip install numpy torch torchvision pyyaml wandb
 ```
+
 ### Preparing Perceptually Aligned Gradients Data
 
 The Perceptually Aligned Gradients' realization for the Score-Based Gradients for the CIFAR-10 dataset is provided in the following table:
@@ -53,7 +54,7 @@ The data should be placed in the data folder, forming the following structure:
     ├── models
     │   ├── ......
     ├── TRAIN_CIFAR10.py
-    
+
 ### Training
 
 ```bash
@@ -70,11 +71,9 @@ RN18 OI | RN18 CM | RN18 NN | RN18 SBG | ViT SBG
 --- | :---: | :---: | :---: | :---: 
 <a href="https://drive.google.com/file/d/1R-Cp2-wIi1JpG6-YLBvqV-quoBetmV1e/view?usp=drive_link">Download</a> | <a href="https://drive.google.com/file/d/1lPkiKzJPU25hMxNZWv-8tYk9-BwoQL7f/view?usp=drive_link">Download</a> | <a href="https://drive.google.com/file/d/1AuBppVh9ghRXxNnJvuBjRg9qv4rCIuIE/view?usp=drive_link">Download</a> | <a href="https://drive.google.com/file/d/1vdtGi_DjhWOlPwuk7d-RVU1amnVfz8z_/view?usp=drive_link">Download</a> | <a href="https://drive.google.com/file/d/18cYjbwdAUdH8jKx11py9NW_ovXVbtpL0/view?usp=drive_link">Download</a> |
 
-
-
 ### Citation
-If you find this code or data to be useful for your research, please consider citing it.
 
+If you find this code or data to be useful for your research, please consider citing it.
 
     @misc{ganz2023perceptually,
           title={Do Perceptually Aligned Gradients Imply Adversarial Robustness?}, 
@@ -85,3 +84,10 @@ If you find this code or data to be useful for your research, please consider ci
           primaryClass={cs.CV}
     }
 
+### Captum
+
+May need to comment out the following if you get an associated error.
+```
+~/.local/lib/python3.10/site-packages/captum$ grep -Rnw . -e "#.*grid"
+./attr/_utils/visualization.py:250:    # plt_axis.grid(b=False)
+```
