@@ -26,7 +26,7 @@ class ViT(nn.Module):
             nn.Linear(hidden, num_classes) # for cls_token
         )
 
-    def forward(self, x):
+    def latent(self, x):
         out = self._to_words(x)
         out = self.emb(out)
         if self.is_cls_token:
@@ -37,6 +37,10 @@ class ViT(nn.Module):
             out = out[:,0]
         else:
             out = out.mean(1)
+        return out
+    
+    def forward(self, x):
+        out = self.latent(x)
         out = self.fc(out)
         return out
 

@@ -87,7 +87,7 @@ class ResNet(nn.Module):
             self.in_planes = planes * block.expansion
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def latent(self, x):
         out = self.activation(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
@@ -95,9 +95,12 @@ class ResNet(nn.Module):
         out = self.layer4(out)
         out = nn.AdaptiveAvgPool2d(1)(out)
         out = out.view(out.size(0), -1)
+        return out
+    
+    def forward(self, x):
+        out = self.latent(x)
         out = self.linear(out)
         return out
-
 
 def ResNet18(activation=torch.nn.ReLU(), dataset='cifar'):
     return ResNet(BasicBlock, [2, 2, 2, 2], activation=activation, dataset=dataset)
