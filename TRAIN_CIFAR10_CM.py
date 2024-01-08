@@ -14,6 +14,9 @@ import yaml
 import os
 import ssl
 from collections import defaultdict
+import art
+from art.attacks.evasion import ProjectedGradientDescent
+from art.estimators.classification import PyTorchClassifier
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -41,27 +44,46 @@ def train_func(model, train_loader, optimizer):
     model.train()
     #
     for batch_idx, (images, targets) in enumerate(train_loader):
-        if device == "cuda":
-            images, targets = images.cuda(), targets.cuda()
-        images.requires_grad = True
+        # if device == "cuda":
+        images, targets = images.cuda(), targets.cuda()
+        # images.requires_grad = True
         # 4, 3, 32, 32 .... 4
         # print(f"images: {images.shape}, target: {target.shape}")
-        
+        # print(f"images min: {torch.min(images)}, max: {torch.max(images)}")
         optimizer.zero_grad()
 
         pred = model(aug(images))
         latents = model.latent(aug(images))
 
-        init_pred = pred.max(1, keepdim=True)[1] # get the index of the max     log-probability
+        # init_pred = pred.max(1, keepdim=True)[1] # get the index of the max     log-probability
 
         # CE loss
-        loss_ce = torch.nn.CrossEntropyLoss()(pred, targets)
+        criterion = torch.nn.CrossEntropyLoss()
+
+        loss_ce = criterion(pred, targets)
+
+        # Step 3: Create the ART classifier
+        classifier = PyTorchClassifier(
+            model=model,
+            clip_values=(-1, 1), # min and max pixel value
+            loss=criterion,
+            optimizer=optimizer,
+            input_shape=(1, 32, 32),
+            nb_classes=10,
+        )
         # loss_ce.backward(retain_graph=True)
-        model.zero_grad()
-        loss_ce.backward(retain_graph=True)
-        epsilon = 0.03
-        images_grad = images.grad.data
-        perturbed_data = fgsm_attack(images, epsilon, images_grad)
+        # model.zero_grad()
+        # loss_ce.backward(retain_graph=True)
+        # epsilon = 0.03
+        # images_grad = images.grad.data
+        # perturbed_data = fgsm_attack(images, epsilon, images_grad)
+        attack = ProjectedGradientDescent(estimator=classifier, eps=0.03)
+        # numpy_images = np.transpose(images.cpu().numpy(), (0, 3, 1, 2)).astype(np.float32)
+        numpy_images = images.cpu().numpy().astype(np.float32)
+
+        # perturbed_data = torch.from_numpy(np.transpose(attack.generate(x=numpy_images), (0, 2, 3, 1)) )
+        perturbed_data = torch.from_numpy(attack.generate(x=numpy_images)).cuda()
+        perturbed_data = torch.nan_to_num(perturbed_data, nan=0)
         perturbed_latents = model.latent(aug(perturbed_data))
         # PAG loss
         pag_loss = 0
@@ -92,7 +114,14 @@ def train_func(model, train_loader, optimizer):
             # print(centroids)
             pag_loss += torch.mean(torch.nn.CosineSimilarity(dim=1)\
                 (latents-perturbed_latents, centroid_latent_vector))
-
+# Train loss in batch 500: -1.3597179651260376 | CE loss: 0.12432830035686493 | PAG loss (before | after coeff): -0.9893641471862793 | -1.484046220779419
+# 1.4810724258422852
+# Pag loss: -0.987381637096405
+# Train loss in batch 700: -1.2283903360366821 | CE loss: 0.25120019912719727 | PAG loss (before | after coeff): -0.9863936901092529 | -1.4795905351638794
+# Pag loss: -0.9863936901092529
+# ================================================================
+# clean accuracy:  0.6635
+# robust accuracy:  0.5893
         model.zero_grad()
         loss = loss_ce + pag_coeff * pag_loss
         # report training statistics
@@ -198,12 +227,12 @@ if __name__ == "__main__":
     # imshow(torchvision.utils.make_grid(images))
     # # print labels
     # print(' '.join(f'{classes[labels[j]]:5s}' for j in range(config["batch_size"])))
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # exit()
 
     for epoch in range(1, config["epochs"] + 1):
         # adjust learning rate for SGD
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         adjust_learning_rate(optimizer, epoch)
         # get pag_coeff
         pag_coeff = get_pag_coeff(epoch)
