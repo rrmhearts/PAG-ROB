@@ -9,12 +9,15 @@ Do Perceptually Aligned Gradients Imply Robustness?
   <a href="https://elad.cs.technion.ac.il/">Michael Elad</a>
 </p>
 <p align="center">
-[ICML 2023 - Oral] Official Code Repository of <a href="https://arxiv.org/abs/2207.11378">Do Perceptually Aligned Gradients Imply Robustness?</a>
+[ICML 2023 - Oral] Unofficial Code Repository of <a href="https://arxiv.org/abs/2207.11378">Do Perceptually Aligned Gradients Imply Robustness?</a>
 </p>
 
 <p align="center">
   <img src="https://github.com/royg27/PAG-ROB/blob/main/PAG-ROB.png" />
 </p>
+
+### Additional
+Additional results based on CM from Ryan (rrmhearts). Attempted to re-implement the original class mean (CM) method and got 46% clean accuracy and 54% robust accuracy. When moving a PGD vector away from the class mean, including pushing it cosine negative (180 degrees), the perforance improved to 66% clean accuracy and 59% robust accuracy. Since orthogonal to the latent class cluster should be sufficient for the property (as in the orignal paper), re-running the PGD version with only reducing positive cosine distances to 0 (in progress). These models and code are available here in [./TRAIN_CIFAR10_CM.py](./TRAIN_CIFAR10_CM.py) (CMmPGD code) and [weights](./models/weights/).
 
 ### Installation
 
